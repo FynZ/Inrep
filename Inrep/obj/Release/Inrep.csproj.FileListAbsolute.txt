@@ -1,0 +1,7 @@
+C:\Users\FynZ\OneDrive\Documents\Visual Studio 2017\Projects\Inrep\Inrep\bin\Release\Inrep.exe.config
+C:\Users\FynZ\OneDrive\Documents\Visual Studio 2017\Projects\Inrep\Inrep\bin\Release\Inrep.exe
+C:\Users\FynZ\OneDrive\Documents\Visual Studio 2017\Projects\Inrep\Inrep\bin\Release\Inrep.pdb
+C:\Users\FynZ\OneDrive\Documents\Visual Studio 2017\Projects\Inrep\Inrep\bin\Release\Gma.System.MouseKeyHook.dll
+C:\Users\FynZ\OneDrive\Documents\Visual Studio 2017\Projects\Inrep\Inrep\obj\Release\Inrep.exe
+C:\Users\FynZ\OneDrive\Documents\Visual Studio 2017\Projects\Inrep\Inrep\obj\Release\Inrep.pdb
+C:\Users\FynZ\OneDrive\Documents\Visual Studio 2017\Projects\Inrep\Inrep\obj\Release\Inrep.csprojResolveAssemblyReference.cache
