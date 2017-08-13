@@ -22,30 +22,45 @@ namespace Inrep
         private const uint WM_LBUTTONDOWN = 0x02;
         private const uint WM_LBUTTONUP = 0x04;
 
+        private const int ALT = 0xA4;
+        private const int EXTENDEDKEY = 0x1;
+        private const int KEYUP = 0x2;
+        private const int SHOW_MAXIMIZED = 3;
+
         private bool ctrlEnabled = false;
         private bool altEnabled = false;
 
         private List<IntPtr> windows;
-        private IntPtr currentProcess;
+        private Process current;
         private Process[] pcs;
+        private Process[] allPcs;
+        private Process vlc;
 
         [DllImport("user32.dll")]
         static extern void PostMessage(IntPtr process, uint Msg, int x, int y);
-
         [DllImport("user32.dll")]
         static extern bool SetForegroundWindow(IntPtr hWnd);
-
         [DllImport("user32.dll")]
         public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, UIntPtr dwExtraInfo);
-
-        //[DllImport("user32.dll")]
-        //public static extern Process GetCurrentProcess();
-
-        //[DllImport("user32.dll")]
-        //public static extern HANDLE getCurrentProcess();
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+        [DllImport("kernel32.dll")]
+        static extern int GetProcessId(IntPtr handle);
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+        [DllImport("user32.dll")]
+        private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, int dwExtraInfo);
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern void SwitchToThisWindow(IntPtr hWnd, bool turnOn);
+        [DllImport("user32.dll")]
+        static extern bool SetCursorPos(int x, int y);
+        [DllImport("user32.dll")]
+        public static extern Process GetCurrentProcess();
 
         public InputListener()
-        {
+        {   
             pcs = Process.GetProcessesByName("Dofus");
             Console.WriteLine("There is currently {0} process of Dofus running", pcs.Length);
         }
@@ -80,7 +95,6 @@ namespace Inrep
 
         private void GlobalHookKeyUp(object sender, KeyEventArgs e)
         {
-            /*
             if (e.KeyValue == ctrlKey)
             {
                 ctrlEnabled = false;
@@ -89,12 +103,11 @@ namespace Inrep
             {
                 altEnabled = false;
             }
-            else if (e.KeyValue == F1Key)
+            if (e.KeyValue == F1Key)
             {
                 this.Unsubscribe();
                 Application.Exit();
             }
-            */
         }
 
         private void GlobalHookMouseDownExt(object sender, MouseEventExtArgs e)
@@ -105,21 +118,33 @@ namespace Inrep
 
             if (altEnabled == true)
             {
-                Process current = Process.GetCurrentProcess();
-                /*
-                Console.WriteLine("The modifier was pressed and we should replicate this input on every window");
-                foreach (Process process in pcs)
+                try
                 {
-                    if (process.Id != current.Id)
+                    setCurrentProcess();
+                    Console.WriteLine(current.ToString());
+                    Console.WriteLine("The modifier was pressed and we should replicate this input on every window");
+                    Console.WriteLine("Current process id is : {0}", current.Id);
+                    SetCursorPos(e.X, e.Y);
+                    foreach (Process process in pcs)
                     {
-                        bool result = SetForegroundWindow(process.MainWindowHandle);
-                        Console.WriteLine(result);
-                        mouse_event(0x02, Convert.ToUInt16(e.X), Convert.ToUInt16(e.Y), 0, UIntPtr.Zero);
-                        Thread.Sleep(100);
-                        mouse_event(0x04, Convert.ToUInt16(e.X), Convert.ToUInt16(e.Y), 0, UIntPtr.Zero);
+                        Console.WriteLine("Targeted process id is : {0}", process.Id);
+                        if (process.Id != current.Id)
+                        {
+                            SetForegroundWindow(process.MainWindowHandle);
+                            Thread.Sleep(500);
+                            /*
+                            mouse_event(WM_LBUTTONDOWN, 0, 0, 0, UIntPtr.Zero);
+                            Thread.Sleep(500);
+                            mouse_event(WM_LBUTTONUP, 0, 0, 0, UIntPtr.Zero);
+                            Thread.Sleep(500);
+                            */
+                        }
                     }
                 }
-                */
+                catch (Exception exc)
+                {
+                    Console.WriteLine(exc);
+                }
             }
         }
 
@@ -138,6 +163,28 @@ namespace Inrep
 
             //It is recommened to dispose it
             m_GlobalHook.Dispose();
+        }
+
+        public void setCurrentProcess()
+        {
+            IntPtr ptr = GetForegroundWindow();
+            int processId = GetProcessId(ptr);
+            current = Process.GetProcessById(processId);
+            Console.WriteLine(current);
+        }
+
+        private void bringToFront(IntPtr mainWindowHandle)
+        {
+            // Guard: check if window already has focus.
+            if (mainWindowHandle == GetForegroundWindow()) return;
+            // Show window maximized.
+            ShowWindow(mainWindowHandle, SHOW_MAXIMIZED);
+            // Simulate an "ALT" key press.
+            keybd_event((byte)ALT, 0x45, EXTENDEDKEY | 0, 0);
+            // Simulate an "ALT" key release.
+            keybd_event((byte)ALT, 0x45, EXTENDEDKEY | KEYUP, 0);
+            // Show window in forground.
+            SetForegroundWindow(mainWindowHandle);
         }
     }
 }
